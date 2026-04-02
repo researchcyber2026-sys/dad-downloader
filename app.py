@@ -5,47 +5,54 @@ import os
 
 st.title("Video Downloader 🎥")
 
-# Input box for the URL
-video_url = st.text_input("Paste Link Here:", placeholder="https://www.facebook.com/...")
+video_url = st.text_input("Paste Link Here:", placeholder="https://www.instagram.com/reel/...")
 
 if st.button("Download"):
     if video_url:
         try:
-            # Generate the timestamp filename
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"video_{timestamp}.mp4"
-
-            # Status message for the user
+            
             status = st.empty()
-            status.info("Processing... please wait.")
+            status.info("Bypassing security... please wait.")
 
-            # Settings to grab a single MP4 file (no FFmpeg needed)
+            # Advanced options to mimic a real browser without cookies
             ydl_opts = {
                 'format': 'best[ext=mp4]/best',
                 'outtmpl': filename,
                 'quiet': True,
+                'no_warnings': True,
+                'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                'add_header': [
+                    'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                    'Accept-Language: en-US,en;q=0.5',
+                    'Referer: https://www.google.com/',
+                    'DNT: 1',
+                ],
+                'extractor_args': {
+                    'instagram': {
+                        'get_test_report': [True],
+                    }
+                },
             }
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([video_url])
             
-            # Read the file and trigger immediate download
             if os.path.exists(filename):
                 with open(filename, "rb") as file:
                     status.empty()
+                    st.success("Download Ready!")
                     st.download_button(
-                        label="✅ Click here if download didn't start",
+                        label="⬇️ Save to Device",
                         data=file,
                         file_name=filename,
                         mime="video/mp4"
                     )
-                    # This line below is a "hack" to try and auto-click the download for some browsers
-                    st.success(f"Video {filename} is ready!")
-                
-                # Clean up server storage
                 os.remove(filename)
 
         except Exception as e:
-            st.error(f"Error: {e}")
+            st.error(f"Instagram Blocked the Request: {e}")
+            st.info("Tip: If this fails, the Streamlit Server IP is likely temporary blacklisted. Try again in 10 minutes.")
     else:
         st.warning("Please paste a link first.")
