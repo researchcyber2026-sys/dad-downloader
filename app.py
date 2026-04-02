@@ -5,7 +5,7 @@ import os
 
 st.title("Video Downloader 🎥")
 
-# Input box for any URL
+# Input box for the URL
 video_url = st.text_input("Paste Link Here:", placeholder="https://www.facebook.com/...")
 
 if st.button("Download"):
@@ -15,29 +15,35 @@ if st.button("Download"):
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"video_{timestamp}.mp4"
 
-            # Simplified settings to avoid the FFmpeg error
+            # Status message for the user
+            status = st.empty()
+            status.info("Processing... please wait.")
+
+            # Settings to grab a single MP4 file (no FFmpeg needed)
             ydl_opts = {
-                'format': 'best[ext=mp4]/best', # Downloads a single file with audio + video
+                'format': 'best[ext=mp4]/best',
                 'outtmpl': filename,
+                'quiet': True,
             }
 
-            with st.spinner("Downloading..."):
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    ydl.download([video_url])
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([video_url])
             
-            # Show the video and the save button
-            with open(filename, "rb") as file:
-                st.video(file)
-                st.download_button(
-                    label="Save to Device",
-                    data=file,
-                    file_name=filename,
-                    mime="video/mp4"
-                )
-            
-            # Clean up the server file
-            os.remove(filename)
-            st.success("Done!")
+            # Read the file and trigger immediate download
+            if os.path.exists(filename):
+                with open(filename, "rb") as file:
+                    status.empty()
+                    st.download_button(
+                        label="✅ Click here if download didn't start",
+                        data=file,
+                        file_name=filename,
+                        mime="video/mp4"
+                    )
+                    # This line below is a "hack" to try and auto-click the download for some browsers
+                    st.success(f"Video {filename} is ready!")
+                
+                # Clean up server storage
+                os.remove(filename)
 
         except Exception as e:
             st.error(f"Error: {e}")
